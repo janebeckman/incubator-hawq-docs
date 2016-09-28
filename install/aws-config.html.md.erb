@@ -29,9 +29,7 @@ Instance store-backed storage is generally better performing than EBS and recomm
 **Note** EC2 *instance store* provides temporary block-level storage. This storage is located on disks that are physically attached to the host computer. While instance store provides high performance, powering off the instance causes data loss. Soft reboots preserve instance store data. 
      
 Virtual devices for instance store volumes for HAWQ EC2 instance store instances are named `ephemeralN` (where *N* varies based on instance type). CentOS instance store block device are named `/dev/xvdletter` (where *letter* is a lower case letter of the alphabet).
-
-?? DO WE RECOMMEND EBS-backed VOLUMES FOR ANYTHING?  I.E. BACKUPS, ...??)
-       
+  
 
 ### <a id="topic_cfgplacegrp"></a>Configure Placement Group 
 
@@ -77,21 +75,11 @@ A security group is a set of rules that control network traffic to and from your
 
 To configure HAWQ communication between nodes in the HAWQ cluster, include and open the following ports in the appropriate security group for the HAWQ master and segment nodes:
 
-?? PROVIDE SPECIFIC type/protocol/portrange/source settings from EC2 console ??
-
 | Port  | Application |
 |-------|-------------------------------------|
 | 22    | ssh - secure connect to other hosts |
-| XX  | XX |  
-
-UDP access within the VPC should be enabled by default.
-
-
-?? DIFFENT SECURITY GROUP FOR AMBARI NODE ??
 
 To allow access to/from a source external to the Ambari management node, include and open the following ports in an appropriate security group for your Ambari node:
-
-?? PROVIDE SPECIFIC type/protocol/portrange/source settings from EC2 console ??
 
 | Port  | Application |
 |-------|-------------------------------------|

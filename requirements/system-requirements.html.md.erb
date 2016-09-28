@@ -231,7 +231,7 @@ HAWQ hosts will be configured to use passwordless SSH for intra-cluster communic
 -   Gigabit Ethernet within the array. For a production cluster, 10 Gigabit Ethernet recommended.
 -   Dedicated, non-blocking switch.
 -   Systems with multiple NICs require NIC bonding to utilize all available network bandwidth.
-
+-   Communication between the HAWQ master and segments requires reverse DNS lookup be configured in your cluster network.
 
 ## <a id="port-req"></a>Port Requirements
 Individual PXF plug-ins, which you install after adding the HAWQ and PXF services, require that you Tomcat on the host machine. Tomcat reserves ports 8005, 8080, and 8009.

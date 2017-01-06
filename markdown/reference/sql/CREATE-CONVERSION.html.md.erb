@@ -33,7 +33,9 @@ To create a conversion, you must have `EXECUTE` privilege on the function and `C
 
 <dt> \<funcname\>   </dt>
 <dd>The function used to perform the conversion. The function name may be schema-qualified. If it is not, the function will be looked up in the path. The function must have the following signature:
-```pre
+</dd>
+
+``` 
 conv_proc(
     integer,  -- source encoding ID
     integer,  -- destination encoding ID
@@ -42,10 +44,6 @@ conv_proc(
     integer   -- source string length
 ) RETURNS void;
 ```
-</dd>
-
-<dt>WITHOUT FUNCTION \<call\_handler\>   </dt>
-<dd>Indicates that the source type and the target type are binary compatible, so no function is required to perform the cast.</dd>
 
 ## <a id="topic1__section5"></a>Notes
 

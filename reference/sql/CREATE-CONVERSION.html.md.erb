@@ -34,7 +34,7 @@ To create a conversion, you must have `EXECUTE` privilege on the function and `C
 <dd>The destination encoding name.</dd>
 
 <dt> \<funcname(argtypes)\>   </dt>
-<dd>TThe function used to perform the conversion. The function name may be schema-qualified. If it is not, the function will be looked up in the path. The function must have the following signature:</dd>
+<dd>The function used to perform the conversion. The function name may be schema-qualified. If it is not, the function will be looked up in the path. The function must have the following signature:</dd>
 
 ``` pre
 conv_proc(
@@ -64,4 +64,5 @@ There is no `CREATE CONVERSION` statement in the SQL standard.
 
 ## <a id="topic1__section5"></a>See Also
 
-[CREATE FUNCTION](CREATE-FUNCTION.html), [DROP FUNCTION](DROP-FUNCTION.html)
+[CREATE FUNCTION](CREATE-FUNCTION.html), [DROP CONVERSION](DROP-CONVERSION.html)
+

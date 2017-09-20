@@ -624,7 +624,7 @@ Follow these steps to install and configure a Kerberos KDC server on a Red Hat E
     root@kdc-server$ yum install krb5-libs krb5-server krb5-workstation
     ```
 
-3.  Define the Kerberos realm for your cluster by editting the `/etc/krb5.conf` configuration file. The following example configures a Kerberos server with a realm named `REALM.DOMAIN` residing on a host named `hawq-kdc`.
+3.  Define the Kerberos realm for your cluster by editing the `/etc/krb5.conf` configuration file. The following example configures a Kerberos server with a realm named `REALM.DOMAIN` residing on a host named `hawq-kdc`.
 
     ```
     [logging]
@@ -699,6 +699,7 @@ Follow these steps to install and configure a Kerberos KDC server on a Red Hat E
     root@kdc-server$ /sbin/chkconfig krb5kdc on
     root@kdc-server$ /sbin/chkconfig kadmin on
     ```
+    
 ### <a id="task_setup_kdc_ad"></a>Install and Configure KDC Server on Active Directory
 
 Follow these steps to install and configure a Kerberos KDC server on a Windows host with Active Directory. 
@@ -712,24 +713,22 @@ Follow these steps to install and configure a Kerberos KDC server on a Windows h
 3. Go to the DATALOCAL entry in the directory tree of the **Active Directory Users and Computers** window and  right click on **Managed Service Accounts**. 
 4.  Select **New** \> **User**.
 5.  A **New Object - User** popup window will appear. In the **First name:** window, enter `gpadmin` and also enter `gpadnub` as the **User logon name**.
-
-
 6. Click **Next**. Create and confirm a password. Enable the checkbox for **Password never expires**. Click **Next**, then **Finish**. 
-7. Depending on your Windows environment, either open a Windows power shell or click **Start** and open a command prompt session and select **Run as Administrator** \> **Yes** to open an administrator window.
+7. Log into Windows as Administrator. Depending on your Windows environment, either open a Windows power shell or click **Start** and open a command prompt session and select **Run as Administrator** \> **Yes** to open an administrator window.
 8. Add a Service Principal Name (SPN) for the account just created:
 
-   ```
+   ``` shell
    PS C:\Users\Administrator> setspn -A postgres/hdp3.example.com gpadmin
    ```
    
 9. Generate a keytab file by using the `ktpass` command. This command takes the form:
 
-   ```
+   ``` shell
    ktpass -princ postgres/<FQDN of HDB master> -pass <password> -mapuser <Managed Service Account name> -crypto ALL -ptype KRB5_NT_PRINCIPAL -out <keytab filename> -kvno 0 
    ```
    For example, to create `hdp3.keytab` for gpadmin on hdp3.mydomain.com@DATA.LOCAL:
    
-   ```
+   ``` shell
    PS C:\Users\Administrator> ktpass -princ postgres/hdp3.mydomain.com@DATA.LOCAL -pass abcd1234 -mapuser gpadmin -crypto ALL -ptype KRB5_NT_PRINCIPAL -out hdp3.keytab -kvno 0
    
    Targeting domain controller: WIN-TIH2EBEERUK.DATA.LOCAL
@@ -751,16 +750,16 @@ keysize 69 postgres/hdp3.example.com@DATA.LOCAL ptype 1 (KRB5_NT_PRINCIPAL) vno 
    
 10. Transfer the generated keytab file to the HDB master. Change the ownership of the keytab file to `gpadmin:gpadmin` and the mode to `600`. **Procedure? Can you use automated kerberos setup on Ambari?**
 
-11. Install the Kerberos packages on the HAWQ master. 
+11. Install the Kerberos packages on the HAWQ master. **Is the HAWQ environment already set up?** 
 
-12. Edit the .etc/krb5.conf configuration file to use the appropriate settings. 
+12. Edit the `.etc/krb5.conf` configuration file to define the Kerberos realm for the cluster. 
 
-   **Are you still logged in as PS C:\Users\Administrator> ? Have you logged in as root via ssh after installing the Kerberos packages? What if you use Ambari? This page has commands for Powershell: 
+   **Are you still logged in as PS C:\Users\Administrator> ? What if you use Ambari? This page has commands for Powershell: 
    https://hortonworks.com/blog/enabling-kerberos-hdp-active-directory-integration/**
 
-   The following example uses the default DATA.LOCAL realm.
+   The following example shows configuring the Kerberos server for the default DATA.LOCAL realm on the KDC host `my-kdc`.
    
-   ```
+   ``` shell
    [logging]
  default = FILE:/var/log/krb5libs.log
  kdc = FILE:/var/log/krb5kdc.log
@@ -776,56 +775,66 @@ keysize 69 postgres/hdp3.example.com@DATA.LOCAL ptype 1 (KRB5_NT_PRINCIPAL) vno 
  forwardable = true
 [realms]
  DATA.LOCAL = {
- kdc = <KDC Hostname>:88
- admin_server = <KDC Hostname>:749
+ kdc = my-kdc:88
+ admin_server = my-kdc:749
  }
 [domain_realm]
-<KDC Hostname> = DATA.LOCAL
- .<KDC Hostname> = DATA.LOCAL
+my-kdc = DATA.LOCAL
+ .my-kdc = DATA.LOCAL
  .data.local = DATA.LOCAL
  data.local = DATA.LOCAL
 
    ```
+The kdc and admin_server keys in the [realms] section specify the host `my-kdc` and port where the Kerberos server is running. You can use an IP address in place of a host name. If your Kerberos server manages authentication for other realms, you would instead add the \<REALM.DOMAIN\> in the `[realms]` and `[domain_realm]` sections of the `krb5.conf` file. See the [Kerberos documentation](http://web.mit.edu/kerberos/krb5-latest/doc/) for detailed information about the `krb5.conf` configuration file.
 
-13. Modify hawq-site.xml to specify the location of the keytab file. For example, adding the line below  to the `hawq-site.xml` file specifies the folder /home/gpadmin as the location of the keytab file `hdp3.keytab`. 
+13. Specify the location of the keytab file.
 
-   ```
-<property>
-    <name>krb_server_keyfile</name>
-    <value>/home/gpadmin/hdp3.keytab</value>
- </property>
-   ```
-If you use Ambari for managing your HAWQ cluster: 
-
-    1.  Login in to the Ambari UI from a supported web browser.
-
-    2. Navigate to the **HAWQ** service, **Configs > Advanced** tab and expand the **Custom hawq-site** drop down.
-
-    3. Set the `krb_server_keyfile` path value to the new keytab file location, `/home/gpadmin/hawq-krb5.keytab`.
-
-    4. **Save** this configuration change and go to the next step to modify `pg_hba.conf`.
-
-14.  Modify the HDB file `pg_hba.conf `to enable Kerberos support. This `pg_hba.conf` entry specifies that any remote access (i.e. from any user on any remote host) to HAWQ must be authenticated through the Kerberos realm named `REALM.DOMAIN`.
+  Note: If you use Ambari to manage your cluster, perform all steps through Ambari. If setup is done through the command line on an Ambari Cluster, Ambari will overwrite the settings on startup.  
   
-   For example, adding the line shown below to pg_hba.conf adds GSSAPI and Kerberos support. The value for krb_realm is the Kerberos realm that is used for authentication to HDB.
+ **Using Ambari:**
   
-   ```
+ 
+ If you use Ambari for managing your HAWQ cluster:
+ 
+     
+   1. Login in to the Ambari UI from a supported web browser.
+   2. Navigate to the **HAWQ** service, **Configs > Advanced** tab and expand the **Custom hawq-site** drop down.
+   3. Set the `krb_server_keyfile` path value to the new keytab file location, `/home/gpadmin/hawq-krb5.keytab`.
+   4. **Save** this configuration change and then select the now orange **Restart > Restart All Affected** menu button to restart your HAWQ cluster.    **Correct process?? Hortonworks has something about running scripts. See https://hortonworks.com/blog/enabling-kerberos-hdp-active-directory-integration/**
+
+
+**Using the Command Line**
+
+Modify hawq-site.xml to specify the location of the keytab file. For example, adding the line below  to the `hawq-site.xml` file specifies the folder /home/gpadmin as the location of the keytab file `hdp3.keytab`. 
+
+   ``` shell
+gpadmin@master$ hawq config -c krb_server_keyfile -v '/home/gpadmin/hdb3.keytab'
+GUC krb_server_keyfile already exist in hawq-site.xml
+Update it with value: /home/gpadmin/hawq-krb5.keytab
+GUC      : krb_server_keyfile
+Value    : /home/gpadmin/hawq-krb5.keytab
+```
+
+14.  Enable Kerberos support so that any remote access (i.e. from any user on any remote host) to HAWQ must be authenticated through the Kerberos realm named `DATA.LOCAL`.
+
+**Using the Command Line:** 
+Modify the HDB file `pg_hba.conf `to enable Kerberos support. This `pg_hba.conf` entry specifies that any remote access (i.e. from any user on any remote host) to HAWQ must be authenticated through the Kerberos realm named `DATA.LOCAL`. 
+
+For example, adding the line shown below to pg_hba.conf adds GSSAPI and Kerberos support. The value for krb_realm is the Kerberos realm that is used for authentication to HDB.
+  
+   ``` shell
 host all all 0.0.0.0/0 gss include_realm=0 krb_realm=DATA.LOCAL
    ```
     **Note**: You must place the Kerberos entry in the appropriate location in the `pg_hba.conf` file. For example, you may choose to retain `pg_hba.conf` entries for the `gpadmin` user that grant `trust` or `ident` authentication for local connections. Locate the Kerberos entry after these line(s). Refer to [Configuring Client Authentication](client_auth.html) for additional information about the `pg_hba.conf` file.
     
-    **Ambari process?? Hortonworks has something about running scripts. See https://hortonworks.com/blog/enabling-kerberos-hdp-active-directory-integration/**
-    
-15. When finished modifying pg_hba.conf, restart your HAWQ cluster.
+ 15. When finished modifying pg_hba.conf, restart your HAWQ cluster.
    At the command line: 
-   ```
+   ``` shell
    hawq restart cluster -a
    ```
 
-   On the Ambari interface, **Save** this configuration change and then select the now orange **Restart > Restart All Affected** menu button to restart your HAWQ cluster.
-
 16. Use `kinit` to create an HDFS Kerberos ticket. Show the tickets in the Kerberos ticket cache by running `klist`. 
-   ```
+   ``` shell
 [gpadmin@hdp3 ~]$ kinit gpadmin
 Password for gpadmin@DATA.LOCAL: 
 [gpadmin@hdp3 ~]$ klist
@@ -836,8 +845,6 @@ Valid starting Expires Service principal
  renew until 06/15/17 09:24:19
    ```
    Note: If you receive the error "Preauthentication failed while getting initial credentials" open the **Account** tab on the Active Directory server and select the box for **Do not require Kerberos preauthentication** from the **Account** options.
-
-  **Is there an Ambari procedure?**
 
 14. Test the Kerberos connection by logging into the database as gpadmin, with the gpadmin Kerberos credentials. 
 ```
